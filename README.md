@@ -1,7 +1,3 @@
-Great choice! **Ethereal** ✨ has a soft, calming, and elegant feel—perfect for a focus app. Now, here's your **polished README** with the new name:  
-
----
-
 # **Ethereal – A Tranquil Way to Stay Focused** ✨  
 *Built on Ethereum for Hacklahoma 2025*  
 
