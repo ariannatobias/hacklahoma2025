@@ -1,0 +1,91 @@
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom right, #7c3aed, #0d9488, #fbbf24);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+  }
+  
+  .container {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    border-radius: 20px;
+    max-width: 400px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .input-group {
+    margin-bottom: 15px;
+  }
+  
+  label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+  
+  input,
+  select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    outline: none;
+  }
+  
+  input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  
+  button.start {
+    background-color: #4f46e5;
+  }
+  
+  button.start:hover {
+    background-color: #4338ca;
+  }
+  
+  button.complete {
+    background-color: #10b981;
+  }
+  
+  button.complete:hover {
+    background-color: #059669;
+  }
+  
+  button.exit {
+    background-color: #ef4444;
+  }
+  
+  button.exit:hover {
+    background-color: #dc2626;
+  }
+  
+  .timer {
+    font-size: 32px;
+    margin: 20px 0;
+    font-weight: bold;
+  }
+  
