@@ -47,18 +47,21 @@ contract Ethereal is ERC721URIStorage, Ownable {
     /**
      * @dev Complete a session and claim back the staked ETH.
      */
-    function completeSession() external {
+        function completeSession() external {
         FocusSession storage session = sessions[msg.sender];
         require(session.startTime > 0, "No active session");
+        require(!session.completed, "Session already completed");
         require(block.timestamp >= session.startTime + session.duration, "Session not finished");
 
-        session.completed = true;
         uint256 amount = session.stake;
 
+        // 🛠️ Ensure session data is fully reset BEFORE transferring ETH
         session.startTime = 0;
         session.duration = 0;
         session.stake = 0;
+        session.completed = true; 
 
+        // Transfer ETH after resetting session
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success, "Transfer failed.");
 
@@ -68,6 +71,14 @@ contract Ethereal is ERC721URIStorage, Ownable {
             _mintNFT(msg.sender);
         }
     }
+
+     function resetSession() external {
+        sessions[msg.sender].startTime = 0;
+        sessions[msg.sender].duration = 0;
+        sessions[msg.sender].stake = 0;
+        sessions[msg.sender].completed = false;
+    }
+
 
     /**
      * @dev Exit a focus session early, losing 25% of staked ETH.
@@ -89,6 +100,8 @@ contract Ethereal is ERC721URIStorage, Ownable {
 
         emit FocusExitedEarly(msg.sender, penalty);
     }
+
+    
 
     /**
      * @dev Mint an NFT to reward a user for completing a session.
