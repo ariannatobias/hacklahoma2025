@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { getContract } from "./contract";
 import { ethers } from "ethers";
 import { motion } from "framer-motion";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 import "./styles.css";
 
 declare global {
@@ -18,46 +20,44 @@ export function App() {
   const [timeLeft, setTimeLeft] = useState(duration * 60);
 
   useEffect(() => {
+    setTimeLeft(duration * 60);
+  }, [duration]);
+
+  useEffect(() => {
     if (isActive && timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
+      const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
       return () => clearInterval(timer);
     }
   }, [isActive, timeLeft]);
 
   const startFocusSession = async () => {
     try {
-        const contract = await getContract();
-        
-        // Ensure MetaMask is available
-        if (!window.ethereum) {
-            setMessage("MetaMask is not installed.");
-            return;
-        }
+      if (!window.ethereum) {
+        setMessage("MetaMask is not installed.");
+        return;
+      }
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const userAddress = await signer.getAddress();
+      const contract = await getContract();
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+      const session = await contract.sessions(userAddress);
+      if (session.startTime && session.startTime > 0) {
+        setMessage("You already have an active session.");
+        return;
+      }
 
-        const isActive = await contract.isSessionActive(userAddress);
-        if (isActive) {
-            setMessage("You already have an active session.");
-            return;
-        }
 
-        const tx = await contract.startSession(duration, { value: ethers.parseEther(stake) });
-        await tx.wait();
-        setMessage("Focus session started!");
-        setIsActive(true);
+      const tx = await contract.startSession(duration, { value: ethers.parseEther(stake) });
+      await tx.wait();
+      setMessage("Focus session started!");
+      setIsActive(true);
       setTimeLeft(duration * 60);
-      console.log("Session started. isActive:", isActive);
-
     } catch (error) {
-        console.error(error);
-        setMessage("Error starting session.");
+      console.error(error);
+      setMessage("Error starting session.");
     }
-};
+  };
 
   const completeSession = async () => {
     try {
@@ -85,18 +85,6 @@ export function App() {
     }
   };
 
-  const forceExitSession = async () => {
-    try {
-        const contract = await getContract();
-        const tx = await contract.exitEarly();
-        await tx.wait();
-        setMessage("Session forcibly exited. Try starting a new one.");
-    } catch (error) {
-        console.error(error);
-        setMessage("Error exiting session.");
-    }
-};
-
   return (
     <div className="container">
       <motion.div 
@@ -106,7 +94,7 @@ export function App() {
         transition={{ duration: 0.8 }}
       >
         <h1 className="title">Ethereal Focus</h1>
-  
+
         {!isActive ? (
           <motion.div 
             initial={{ opacity: 0, y: -10 }} 
@@ -122,7 +110,7 @@ export function App() {
                 placeholder="0.01"
               />
             </div>
-  
+
             <div className="input-group">
               <label>Focus Duration (minutes):</label>
               <input
@@ -132,15 +120,24 @@ export function App() {
                 placeholder="25"
               />
             </div>
-  
+
             <button onClick={startFocusSession} className="btn start">Start Focus Session</button>
           </motion.div>
         ) : (
-          <div className="timer">
-            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
+          <div className="timer-container">
+            <CircularProgressbar
+              value={(duration * 60 - timeLeft) / (duration * 60) * 100}
+              text={`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`}
+              styles={buildStyles({
+                pathColor: "#6EE7B7",
+                textColor: "#fff",
+                trailColor: "rgba(255,255,255,0.3)",
+                pathTransitionDuration: 0.5,
+              })}
+            />
           </div>
         )}
-  
+
         {isActive && (
           <motion.div 
             className="btn-group"
@@ -150,7 +147,6 @@ export function App() {
           >
             <button onClick={completeSession} className="btn complete">Complete</button>
             <button onClick={exitSessionEarly} className="btn exit">Exit Early</button>
-            <button onClick={forceExitSession} className="btn force-exit">Force Exit</button>
           </motion.div>
         )}
         <p className="message">{message}</p>
