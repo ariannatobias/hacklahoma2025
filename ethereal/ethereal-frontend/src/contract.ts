@@ -16,8 +16,8 @@ export const getProvider = () => new ethers.JsonRpcProvider(RPC_URL);
 
 // Create a signer (to send transactions)
 export const getSigner = async () => {
-  if (!(window as any).ethereum) throw new Error("MetaMask not installed");
-  const provider = new ethers.BrowserProvider((window as any).ethereum);
+  if (!window.ethereum) throw new Error("MetaMask not installed");
+  const provider = new ethers.BrowserProvider(window.ethereum);
   return provider.getSigner();
 };
 

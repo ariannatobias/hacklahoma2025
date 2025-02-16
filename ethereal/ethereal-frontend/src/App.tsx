@@ -14,7 +14,7 @@ declare global {
 
 export function App() {
   const [isActive, setIsActive] = useState(false);
-  const [stake, setStake] = useState("");
+  const [stake, setStake] = useState("0.01");
   const [duration, setDuration] = useState(25);
   const [message, setMessage] = useState("");
   const [timeLeft, setTimeLeft] = useState(duration * 60);
@@ -30,79 +30,38 @@ export function App() {
     }
   }, [isActive, timeLeft]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const contractInstance = await getContract();
-        (window as any).contract = contractInstance; // Attach contract to global scope
-        console.log("✅ Contract loaded:", contractInstance);
-      } catch (error) {
-        console.error("❌ Error loading contract:", error);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const contract = await getContract();
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const userAddress = await signer.getAddress();
-        
-        const session = await contract.sessions(userAddress);
-        console.log("Session Data:", session);
-  
-        if (Number(session[0]) > 0) {
-          setIsActive(true);
-          setTimeLeft(Number(session[1]) * 60);
-        } else {
-          setIsActive(false);
-        }
-      } catch (error) {
-        console.error("Error fetching session:", error);
-      }
-    };
-  
-    checkSession();
-  }, []);  
-
   const startFocusSession = async () => {
     try {
-        const contract = await getContract();
-        
-        if (!window.ethereum) {
-            setMessage("MetaMask is not installed.");
-            return;
-        }
+      const contract = await getContract();
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const userAddress = await signer.getAddress();
+      if (!window.ethereum) {
+        setMessage("MetaMask is not installed.");
+        return;
+      }
 
-        const session = await contract.sessions(userAddress);
-        console.log("Session Data:", session); // Debugging output
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
 
-        // Convert BigInt values to Number
-        const startTime = Number(session[0]);  // Convert BigInt to Number
-        const duration = Number(session[1]);   // Convert BigInt to Number
-        const stake = Number(session[2]);      // Convert BigInt to Number
+      const session = await contract.sessions(userAddress);
+      if (Number(session.startTime) > 0 && session.completed === false) { 
+        setMessage("You already have an active session.");
+        return;
+    }    
 
-        if (startTime > 0) { 
-            setMessage("You already have an active session.");
-            return;
-        }
+      const ethValue = ethers.parseEther(stake);
 
-        const tx = await contract.startSession(duration, { value: ethers.parseEther(stake.toString()) });
-        await tx.wait();
-        setMessage("Focus session started!");
-        setIsActive(true);
-        setTimeLeft(duration * 60);
-    } catch (error) {
-        console.error(error);
-        setMessage("Error starting session.");
+      const tx = await contract.completeSession({ gasLimit: 300000 });
+      await tx.wait();
+    
+      setMessage("Focus session started!");
+      setIsActive(true);
+      setTimeLeft(duration * 60);
+    } catch (error: any) {
+      console.error("Transaction failed:", error.reason || error.message);
+      setMessage("Error starting session.");
     }
-};
+  };
 
   const completeSession = async () => {
     try {
@@ -111,8 +70,8 @@ export function App() {
       await tx.wait();
       setMessage("Focus session completed! ETH refunded.");
       setIsActive(false);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error("Error completing session:", error.reason || error.message);
       setMessage("Error completing session.");
     }
   };
@@ -124,11 +83,28 @@ export function App() {
       await tx.wait();
       setMessage("Exited early. Penalty applied.");
       setIsActive(false);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error("Error exiting early:", error.reason || error.message);
       setMessage("Error exiting early.");
     }
   };
+
+  const debugSession = async () => {
+    try {
+      const contract = await getContract();
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+  
+      const session = await contract.sessions(userAddress);
+      console.log("✅ Session Data:", session);
+      console.log("Start Time:", Number(session.startTime));
+      console.log("Duration:", Number(session.duration));
+      console.log("Stake:", ethers.formatEther(session.stake.toString()));
+    } catch (error) {
+      console.error("❌ Error fetching session:", error);
+    }
+  };  
 
   return (
     <div className="container">
@@ -141,11 +117,7 @@ export function App() {
         <h1 className="title">Ethereal Focus</h1>
 
         {!isActive ? (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.6 }}
-          >
+          <div>
             <div className="input-group">
               <label>Stake Amount (ETH):</label>
               <input
@@ -165,34 +137,22 @@ export function App() {
                 placeholder="25"
               />
             </div>
-
+            <button onClick={debugSession} className="btn debug">Debug Session</button>
             <button onClick={startFocusSession} className="btn start">Start Focus Session</button>
-          </motion.div>
-        ) : (
-          <div className="timer-container">
-            <CircularProgressbar
-              value={(duration * 60 - timeLeft) / (duration * 60) * 100}
-              text={`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`}
-              styles={buildStyles({
-                pathColor: "#6EE7B7",
-                textColor: "#fff",
-                trailColor: "rgba(255,255,255,0.3)",
-                pathTransitionDuration: 0.5,
-              })}
-            />
           </div>
+        ) : (
+          <CircularProgressbar
+            value={(duration * 60 - timeLeft) / (duration * 60) * 100}
+            text={`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`}
+            styles={buildStyles({ pathColor: "#6EE7B7", textColor: "#fff" })}
+          />
         )}
 
         {isActive && (
-          <motion.div 
-            className="btn-group"
-            initial={{ opacity: 0, y: 10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.6 }}
-          >
+          <div>
             <button onClick={completeSession} className="btn complete">Complete</button>
             <button onClick={exitSessionEarly} className="btn exit">Exit Early</button>
-          </motion.div>
+          </div>
         )}
         <p className="message">{message}</p>
       </motion.div>
