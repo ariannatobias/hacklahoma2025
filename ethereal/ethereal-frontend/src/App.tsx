@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { GlassmorphicCard } from "./components/GlassmorphicCard";
 import { FocusTimer } from "./components/FocusTimer";
-import { Controls } from "./components/Controls";
 import { getContract } from "./contract";
 import { ethers } from "ethers";
 import { motion } from "framer-motion";
 
 export function App() {
   const [isActive, setIsActive] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [stake, setStake] = useState("");
   const [duration, setDuration] = useState(25);
   const [message, setMessage] = useState("");
@@ -97,13 +95,13 @@ export function App() {
 
               <button
                 onClick={startFocusSession}
-                className="mt-4 w-full bg-violet-500 text-white py-2 rounded-lg shadow-md transition hover:bg-opacity-80"
+                className="mt-4 w-full bg-green-500 text-white py-2 rounded-lg shadow-md transition hover:bg-opacity-80"
               >
                 Start Focus Session
               </button>
             </motion.div>
           ) : (
-            <FocusTimer progress={progress} timeRemaining={`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`} />
+            <FocusTimer timeRemaining={`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`} />
           )}
 
           {isActive && (
@@ -113,12 +111,8 @@ export function App() {
               transition={{ duration: 0.6 }}
               className="flex justify-center space-x-4"
             >
-              <button onClick={completeSession} className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 transition">
-                Complete
-              </button>
-              <button onClick={exitSessionEarly} className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
-                Exit Early
-              </button>
+              <button onClick={completeSession} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Complete</button>
+              <button onClick={exitSessionEarly} className="bg-red-500 text-white px-4 py-2 rounded-lg">Exit Early</button>
             </motion.div>
           )}
 
