@@ -137,7 +137,6 @@ export function App() {
                 placeholder="25"
               />
             </div>
-            <button onClick={debugSession} className="btn debug">Debug Session</button>
             <button onClick={startFocusSession} className="btn start">Start Focus Session</button>
           </div>
         ) : (
