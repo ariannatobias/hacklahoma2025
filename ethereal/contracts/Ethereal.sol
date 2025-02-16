@@ -15,7 +15,7 @@ contract Ethereal is ERC721URIStorage, Ownable {
 
     mapping(address => FocusSession) public sessions;
     mapping(address => bool) public hasNFT;
-    uint256 public nftTokenCounter; 
+    uint256 public nftTokenCounter;
 
     event FocusStarted(address indexed user, uint256 stake, uint256 duration);
     event FocusCompleted(address indexed user);
@@ -25,7 +25,6 @@ contract Ethereal is ERC721URIStorage, Ownable {
     constructor() ERC721("Ethereal Focus NFT", "ETHFOCUS") Ownable(msg.sender) {
         nftTokenCounter = 1;
     }
-
 
     /**
      * @dev Start a focus session by staking ETH.
@@ -38,28 +37,36 @@ contract Ethereal is ERC721URIStorage, Ownable {
         emit FocusStarted(msg.sender, msg.value, duration);
     }
 
+    /**
+     * @dev Check if a session is active.
+     */
     function isSessionActive(address user) public view returns (bool) {
-    return sessions[user].startTime > 0 && !sessions[user].completed;
+        return sessions[user].startTime > 0 && !sessions[user].completed && block.timestamp < sessions[user].startTime + sessions[user].duration;
     }
 
     /**
      * @dev Complete a session and claim back the staked ETH.
      */
     function completeSession() external {
-    FocusSession storage session = sessions[msg.sender];
-    require(session.startTime > 0, "No active session");
-    require(block.timestamp >= session.startTime + session.duration, "Session not finished");
+        FocusSession storage session = sessions[msg.sender];
+        require(session.startTime > 0, "No active session");
+        require(block.timestamp >= session.startTime + session.duration, "Session not finished");
 
-    session.completed = true;
-    payable(msg.sender).transfer(session.stake);
-    emit FocusCompleted(msg.sender);
+        session.completed = true;
+        uint256 amount = session.stake;
 
-    if (!hasNFT[msg.sender]) {
-        _mintNFT(msg.sender);
-    }
+        session.startTime = 0;
+        session.duration = 0;
+        session.stake = 0;
 
-    // Reset session so user can start a new one
-    delete sessions[msg.sender];
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "Transfer failed.");
+
+        emit FocusCompleted(msg.sender);
+
+        if (!hasNFT[msg.sender]) {
+            _mintNFT(msg.sender);
+        }
     }
 
     /**
@@ -69,11 +76,17 @@ contract Ethereal is ERC721URIStorage, Ownable {
         FocusSession storage session = sessions[msg.sender];
         require(session.startTime > 0, "No active session");
 
-        uint256 penalty = session.stake / 4; // 25% penalty
+        uint256 penalty = session.stake / 4;
         uint256 refundAmount = session.stake - penalty;
-        
-        delete sessions[msg.sender];
-        payable(msg.sender).transfer(refundAmount);
+
+        session.startTime = 0;
+        session.duration = 0;
+        session.stake = 0;
+        session.completed = true;
+
+        (bool success, ) = payable(msg.sender).call{value: refundAmount}("");
+        require(success, "Transfer failed.");
+
         emit FocusExitedEarly(msg.sender, penalty);
     }
 
@@ -94,6 +107,7 @@ contract Ethereal is ERC721URIStorage, Ownable {
      * @dev Withdraw contract balance (admin only).
      */
     function withdraw() external onlyOwner {
-        payable(owner()).transfer(address(this).balance);
+        (bool success, ) = payable(owner()).call{value: address(this).balance}("");
+        require(success, "Withdraw failed.");
     }
 }

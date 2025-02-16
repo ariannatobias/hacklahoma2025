@@ -30,34 +30,79 @@ export function App() {
     }
   }, [isActive, timeLeft]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const contractInstance = await getContract();
+        (window as any).contract = contractInstance; // Attach contract to global scope
+        console.log("✅ Contract loaded:", contractInstance);
+      } catch (error) {
+        console.error("❌ Error loading contract:", error);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const contract = await getContract();
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const userAddress = await signer.getAddress();
+        
+        const session = await contract.sessions(userAddress);
+        console.log("Session Data:", session);
+  
+        if (Number(session[0]) > 0) {
+          setIsActive(true);
+          setTimeLeft(Number(session[1]) * 60);
+        } else {
+          setIsActive(false);
+        }
+      } catch (error) {
+        console.error("Error fetching session:", error);
+      }
+    };
+  
+    checkSession();
+  }, []);  
+
   const startFocusSession = async () => {
     try {
-      if (!window.ethereum) {
-        setMessage("MetaMask is not installed.");
-        return;
-      }
+        const contract = await getContract();
+        
+        if (!window.ethereum) {
+            setMessage("MetaMask is not installed.");
+            return;
+        }
 
-      const contract = await getContract();
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const userAddress = await signer.getAddress();
-      const session = await contract.sessions(userAddress);
-      if (session.startTime && session.startTime > 0) {
-        setMessage("You already have an active session.");
-        return;
-      }
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const userAddress = await signer.getAddress();
 
+        const session = await contract.sessions(userAddress);
+        console.log("Session Data:", session); // Debugging output
 
-      const tx = await contract.startSession(duration, { value: ethers.parseEther(stake) });
-      await tx.wait();
-      setMessage("Focus session started!");
-      setIsActive(true);
-      setTimeLeft(duration * 60);
+        // Convert BigInt values to Number
+        const startTime = Number(session[0]);  // Convert BigInt to Number
+        const duration = Number(session[1]);   // Convert BigInt to Number
+        const stake = Number(session[2]);      // Convert BigInt to Number
+
+        if (startTime > 0) { 
+            setMessage("You already have an active session.");
+            return;
+        }
+
+        const tx = await contract.startSession(duration, { value: ethers.parseEther(stake.toString()) });
+        await tx.wait();
+        setMessage("Focus session started!");
+        setIsActive(true);
+        setTimeLeft(duration * 60);
     } catch (error) {
-      console.error(error);
-      setMessage("Error starting session.");
+        console.error(error);
+        setMessage("Error starting session.");
     }
-  };
+};
 
   const completeSession = async () => {
     try {
