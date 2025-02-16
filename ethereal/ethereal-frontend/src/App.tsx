@@ -101,7 +101,11 @@ export function App() {
               </button>
             </motion.div>
           ) : (
-            <FocusTimer timeRemaining={`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`} />
+            <FocusTimer 
+              progress={(timeLeft / (duration * 60)) * 100}  // Convert remaining time to percentage
+              timeRemaining={`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`}
+            />
+
           )}
 
           {isActive && (
