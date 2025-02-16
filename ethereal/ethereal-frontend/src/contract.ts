@@ -1,21 +1,28 @@
 import { ethers } from "ethers";
-import EtherealABI from "./EtherealABI.json"; // Import the contract ABI
+import EtherealABI from "./EtherealABI.json"; 
 
-const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS;
-const RPC_URL = process.env.REACT_APP_SEPOLIA_RPC_URL;
+const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || "";
+const RPC_URL = process.env.REACT_APP_SEPOLIA_RPC_URL || "";
+
+if (!CONTRACT_ADDRESS) {
+  console.error("❌ Contract address is missing! Check .env file.");
+}
+if (!RPC_URL) {
+  console.error("❌ RPC URL is missing! Check .env file.");
+}
 
 // Create a provider (read-only)
 export const getProvider = () => new ethers.JsonRpcProvider(RPC_URL);
 
 // Create a signer (to send transactions)
 export const getSigner = async () => {
-  if (!window.ethereum) throw new Error("MetaMask not installed");
-  const provider = new ethers.BrowserProvider(window.ethereum);
+  if (!(window as any).ethereum) throw new Error("MetaMask not installed");
+  const provider = new ethers.BrowserProvider((window as any).ethereum);
   return provider.getSigner();
 };
 
 // Get contract instance
 export const getContract = async () => {
   const signer = await getSigner();
-  return new ethers.Contract(CONTRACT_ADDRESS, EtherealABI, signer);
+  return new ethers.Contract(CONTRACT_ADDRESS, EtherealABI.abi, signer);
 };

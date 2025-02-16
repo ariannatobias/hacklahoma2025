@@ -1,3 +1,9 @@
-npx hardhat run scripts/deploy.js --network sepolia
-console.log(deployments);
-const deployments = await hre.deployments.all();
+console.log(contract);
+const contract = await ethers.getContractAt("Ethereal", "0xa59494f2794c6C950895f0caff6E24de6A74F76D");
+.exit
+ls deployments/sepolia/
+const contract = await ethers.getContractAt("Ethereal", "0x9659D6dB5fecf42C4abAE677206B38afe64d9616");
+await contract.someFunction("0x82b8d167c020cf36b8579b5c029345a646713cf5a3e4a58d0a8f99c24b459a62");
+await contract.someFunction("PRIVATE_KEY="0x82b8d167c020cf36b8579b5c029345a646713cf5a3e4a58d0a8f99c24b459a62"
+const session = await contract.sessions("0x82b8d167c020cf36b8579b5c029345a646713cf5a3e4a58d0a8f99c24b459a62");
+const contract = await ethers.getContractAt("Ethereal", "0x9659D6dB5fecf42C4abAE677206B38afe64d9616");
