@@ -1,3 +1,31 @@
+console.log("Session completed successfully.");
+await contract.completeSession();
+await contract.startSession(2, { value: ethers.parseEther("0.00001") });
+const session = await contract.sessions("0xa59494f2794c6C950895f0caff6E24de6A74F76D");
+console.log(session);
+const session = await contract.sessions("0xa59494f2794c6C950895f0caff6E24de6A74F76D");
+console.log("Session forcibly exited.");
+await contract.exitEarly();
+console.log("Session started successfully.");
+await contract.startSession(2, { value: ethers.parseEther("0.00001") });
+console.log(mySession);
+const mySession = await contract.sessions("0xa59494f2794c6C950895f0caff6E24de6A74F76D");
+console.log(session);
+const session = await contract.sessions("0xa59494f2794c6C950895f0caff6E24de6A74F76D");
+console.log(session);
+");
+console.log(session);
+const session = await contract.sessions("const session = await contract.sessions("0xYourWalletAddressHere");
+console.log("Session started successfully.");
+await contract.startSession(2, { value: ethers.parseEther("0.00001") });
+console.log(session);
+const session = await contract.sessions("0x82b8d167c020cf36b8579b5c029345a646713cf5a3e4a58d0a8f99c24b459a62");
+console.log(contract.interface.fragments.map(f => f.name));
+console.log(contract);
+const contract = await ethers.getContractAt("Ethereal", "0xa59494f2794c6C950895f0caff6E24de6A74F76D");
+npm install dotenv
+console.log(contract);
+const contract = await ethers.getContractAt("Ethereal", "0xa59494f2794c6C950895f0caff6E24de6A74F76D");
 console.log(contract);
 const contract = await ethers.getContractAt("Ethereal", "0xa59494f2794c6C950895f0caff6E24de6A74F76D");
 .exit
