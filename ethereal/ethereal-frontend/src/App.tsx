@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { GlassmorphicCard } from "./components/GlassmorphicCard";
-import { FocusTimer } from "./components/FocusTimer";
 import { getContract } from "./contract";
 import { ethers } from "ethers";
 import { motion } from "framer-motion";
-import "./App.css";
+import "./styles.css";
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 export function App() {
   const [isActive, setIsActive] = useState(false);
@@ -24,17 +28,36 @@ export function App() {
 
   const startFocusSession = async () => {
     try {
-      const contract = await getContract();
-      const tx = await contract.startSession(duration, { value: ethers.parseEther(stake) });
-      await tx.wait();
-      setMessage("Focus session started!");
-      setIsActive(true);
+        const contract = await getContract();
+        
+        // Ensure MetaMask is available
+        if (!window.ethereum) {
+            setMessage("MetaMask is not installed.");
+            return;
+        }
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const userAddress = await signer.getAddress();
+
+        const isActive = await contract.isSessionActive(userAddress);
+        if (isActive) {
+            setMessage("You already have an active session.");
+            return;
+        }
+
+        const tx = await contract.startSession(duration, { value: ethers.parseEther(stake) });
+        await tx.wait();
+        setMessage("Focus session started!");
+        setIsActive(true);
       setTimeLeft(duration * 60);
+      console.log("Session started. isActive:", isActive);
+
     } catch (error) {
-      console.error(error);
-      setMessage("Error starting session.");
+        console.error(error);
+        setMessage("Error starting session.");
     }
-  };
+};
 
   const completeSession = async () => {
     try {
@@ -62,14 +85,35 @@ export function App() {
     }
   };
 
-  return (
-    <main className="main-container">
-      <GlassmorphicCard>
-        <div className="card">
-          <h1>🌿 Ethereal Focus</h1>
+  const forceExitSession = async () => {
+    try {
+        const contract = await getContract();
+        const tx = await contract.exitEarly();
+        await tx.wait();
+        setMessage("Session forcibly exited. Try starting a new one.");
+    } catch (error) {
+        console.error(error);
+        setMessage("Error exiting session.");
+    }
+};
 
-          {!isActive ? (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+  return (
+    <div className="container">
+      <motion.div 
+        className="glass-card"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <h1 className="title">Ethereal Focus</h1>
+  
+        {!isActive ? (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.6 }}
+          >
+            <div className="input-group">
               <label>Stake Amount (ETH):</label>
               <input
                 type="text"
@@ -77,7 +121,9 @@ export function App() {
                 onChange={(e) => setStake(e.target.value)}
                 placeholder="0.01"
               />
-
+            </div>
+  
+            <div className="input-group">
               <label>Focus Duration (minutes):</label>
               <input
                 type="number"
@@ -85,28 +131,32 @@ export function App() {
                 onChange={(e) => setDuration(Number(e.target.value))}
                 placeholder="25"
               />
-
-              <button onClick={startFocusSession}>Start Focus Session</button>
-            </motion.div>
-          ) : (
-            <FocusTimer 
-              progress={(timeLeft / (duration * 60)) * 100}  
-              timeRemaining={`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`}
-            />
-          )}
-
-          {isActive && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="button-group">
-              <button onClick={completeSession}>Complete</button>
-              <button onClick={exitSessionEarly} className="button-danger">Exit Early</button>
-            </motion.div>
-          )}
-
-          <p>{message}</p>
-        </div>
-      </GlassmorphicCard>
-    </main>
-  );
+            </div>
+  
+            <button onClick={startFocusSession} className="btn start">Start Focus Session</button>
+          </motion.div>
+        ) : (
+          <div className="timer">
+            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
+          </div>
+        )}
+  
+        {isActive && (
+          <motion.div 
+            className="btn-group"
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.6 }}
+          >
+            <button onClick={completeSession} className="btn complete">Complete</button>
+            <button onClick={exitSessionEarly} className="btn exit">Exit Early</button>
+            <button onClick={forceExitSession} className="btn force-exit">Force Exit</button>
+          </motion.div>
+        )}
+        <p className="message">{message}</p>
+      </motion.div>
+    </div>
+  );  
 }
 
 export default App;
