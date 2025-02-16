@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
     "test": "echo \"Error: no test specified\" && exit 1"
+
   },
   "keywords": [],
   "author": "",
@@ -11,14 +15,20 @@
   "description": "",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "autoprefixer": "^10.4.20",
     "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
-    "hardhat": "^2.22.18"
+    "hardhat": "^2.22.18",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^4.0.6"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@openzeppelin/contracts": "^5.2.0",
     "framer-motion": "^12.4.3",
-    "tailwindcss": "^4.0.6"
+    "lucide-react": "^0.475.0",
+    "react": "^18.3.1",
+    "react-circular-progressbar": "^2.1.0",
+    "react-dom": "^18.3.1"
   }
 }
